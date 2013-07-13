@@ -4,6 +4,7 @@
   var localStream;
   var remoteStream;
   var channel;
+  var dataChannel;
   var pc;
   var socket;
   var xmlhttp;
@@ -150,10 +151,15 @@
       pc.addStream(localStream);
       started = true;
 
-      if (initiator)
+      if (initiator) {
         doCall();
-      else
+        
+      }
+      else {
         calleeStart();
+        
+
+      }
     }
   }
 
@@ -582,3 +588,30 @@
     containerDiv.style.left = (innerWidth - videoWidth) / 2 + 'px';
     containerDiv.style.top = (innerHeight - videoHeight) / 2 + 'px';
   };
+
+  function sendChatMessage() {
+    if (!initiator) {
+        dataChannel = pc.createDataChannel("chat", {reliable: false});
+        setupChat();
+      }
+      else {
+        pc.ondatachannel = function (evt) {
+          dataChannel = evt.channel;
+          setupChat();
+        }
+
+      }
+    var message = document.getElementById("message").innerHTML;
+    dataChannel.send(message);
+  }
+
+  function setupChat() {
+    dataChannel.onmessage = function(evt) {
+      showChatMessage(evt.data);
+    }
+  }
+
+  function showChatmessage(data) {
+    var chatContent = document.getElementById("chatBox");
+    chatContent.innerHTML = data;
+  }

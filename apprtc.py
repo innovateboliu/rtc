@@ -137,6 +137,7 @@ def make_pc_constraints(compat):
   # For interop with FireFox. Enable DTLS in peerConnection ctor.
   if compat.lower() == 'true':
     constraints['optional'].append({'DtlsSrtpKeyAgreement': True})
+    #constraints['optional'].append({'RtpDataChannels':True})
   return constraints
 
 def make_offer_constraints():

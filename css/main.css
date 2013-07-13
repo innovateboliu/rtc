@@ -17,6 +17,11 @@
     margin: 0px auto;
     -webkit-perspective: 1000;
   }
+  #chatBox {
+    width: 200px;
+    height: 400px;
+    background-color:green;
+  }
   #card {
     -webkit-transition-duration: 2s;
     -webkit-transform-style: preserve-3d;
