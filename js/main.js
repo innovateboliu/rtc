@@ -20,6 +20,8 @@
   var isVideoMuted = false;
   var isAudioMuted = false;
 
+  
+
   function initialize() {
     console.log('Initializing; room=' + roomKey + '.');
     card = document.getElementById('card');
@@ -151,6 +153,8 @@
       pc.addStream(localStream);
       started = true;
 
+      
+
       if (initiator) {
         doCall();
         
@@ -243,6 +247,8 @@
     console.log('Channel opened.');
     channelReady = true;
     maybeStart();
+
+    
   }
   function onChannelMessage(message) {
     console.log('S->C: ' + message.data);
@@ -306,6 +312,16 @@
     attachMediaStream(remoteVideo, event.stream);
     remoteStream = event.stream;
     waitForRemoteVideo();
+    if (!initiator) {
+        dataChannel = pc.createDataChannel("chat", {reliable: false});
+        setupChat();
+      }
+      else {
+        pc.ondatachannel = function (evt) {
+          dataChannel = evt.channel;
+          setupChat();
+        }
+      }
   }
 
   function onRemoteStreamRemoved(event) {
@@ -590,24 +606,25 @@
   };
 
   function sendChatMessage() {
-    if (!initiator) {
-        dataChannel = pc.createDataChannel("chat", {reliable: false});
-        setupChat();
-      }
-      else {
-        pc.ondatachannel = function (evt) {
-          dataChannel = evt.channel;
-          setupChat();
-        }
-
-      }
-    var message = document.getElementById("message").innerHTML;
+    
+    //var message = document.getElementById("message").innerHTML;
+    var message = "hi";
     dataChannel.send(message);
   }
 
   function setupChat() {
+    dataChannel.onopen = onSendChannelStateChange;
     dataChannel.onmessage = function(evt) {
       showChatMessage(evt.data);
+    }
+  }
+
+  function onSendChannelStateChange() {
+    var ready = dataChannel.readystate;
+    if (ready == 'open') {
+      document.getElementById('sendButton').setAttribute('disabled', 'false');
+    } else {
+      sendButton.disabled = true;
     }
   }
 

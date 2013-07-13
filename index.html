@@ -34,7 +34,7 @@
   <div id="chat">
     <div id="chatBox"></div>
       <input id="message" type="text">
-      <input id="sendButton" type="button" value="send" onclick="sendChatMessage()">
+      <button id="sendButton" onclick="sendChatMessage()" disabled='true'>send</button>
   </div>
   <div id="card">
     <div id="local">
@@ -48,8 +48,13 @@
       </div>
     </div>
   </div>
+
 </div>
 </body>
 <footer id="footer">
 </footer>
 </html>
+
+<script type="text/javascript">
+    document.getElementById('sendButton').setAttribute('disabled', 'true');
+</script>
