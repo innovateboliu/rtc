@@ -156,13 +156,19 @@
       
 
       if (initiator) {
+        dataChannel = pc.createDataChannel("chat", {reliable: false});
+        dataChannel.onopen = onSendChannelStateChange;
+        dataChannel.onmessage = onReceiveMessageCallback;
         doCall();
-        
-      }
+      } 
       else {
-        calleeStart();
-        
+        pc.ondatachannel = function (evt) {
+          dataChannel = evt.channel;
+          dataChannel.onmessage = onReceiveMessageCallback;
+          dataChannel.onopen = onSendChannelStateChange;
+        }
 
+        calleeStart();
       }
     }
   }
@@ -188,6 +194,7 @@
   function doAnswer() {
     console.log('Sending answer to peer.');
     pc.createAnswer(setLocalAndSendMessage, null, sdpConstraints);
+
   }
 
   function mergeConstraints(cons1, cons2) {
@@ -312,16 +319,6 @@
     attachMediaStream(remoteVideo, event.stream);
     remoteStream = event.stream;
     waitForRemoteVideo();
-    if (!initiator) {
-        dataChannel = pc.createDataChannel("chat", {reliable: false});
-        setupChat();
-      }
-      else {
-        pc.ondatachannel = function (evt) {
-          dataChannel = evt.channel;
-          setupChat();
-        }
-      }
   }
 
   function onRemoteStreamRemoved(event) {
@@ -607,28 +604,23 @@
 
   function sendChatMessage() {
     
-    //var message = document.getElementById("message").innerHTML;
-    var message = "hi";
+    var message = document.getElementById("message").value;
     dataChannel.send(message);
-  }
-
-  function setupChat() {
-    dataChannel.onopen = onSendChannelStateChange;
-    dataChannel.onmessage = function(evt) {
-      showChatMessage(evt.data);
-    }
+    document.getElementById("message").value = "";
+    var chatContent = document.getElementById("chatBox");
+    chatContent.innerHTML = chatContent.innerHTML.concat('<br> I: ', message);
   }
 
   function onSendChannelStateChange() {
     var ready = dataChannel.readystate;
     if (ready == 'open') {
-      document.getElementById('sendButton').setAttribute('disabled', 'false');
+      //document.getElementById('sendButton').setAttribute('disabled', 'false');
     } else {
-      sendButton.disabled = true;
+      document.getElementById('sendButton').removeAttribute('disabled');
     }
   }
 
-  function showChatmessage(data) {
+  function onReceiveMessageCallback(event) {
     var chatContent = document.getElementById("chatBox");
-    chatContent.innerHTML = data;
+    chatContent.innerHTML = chatContent.innerHTML.concat('<br> Peer: ', event.data);
   }

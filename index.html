@@ -30,12 +30,12 @@
 
   setTimeout(initialize, 1);
 </script>
-<div id="container" ondblclick="enterFullScreen()"> 
-  <div id="chat">
+<div id="chat">
     <div id="chatBox"></div>
-      <input id="message" type="text">
-      <button id="sendButton" onclick="sendChatMessage()" disabled='true'>send</button>
-  </div>
+    <input id="message" type="text">
+    <button id="sendButton" onclick="sendChatMessage()">send</button>
+</div>
+<div id="container" ondblclick="enterFullScreen()"> 
   <div id="card">
     <div id="local">
       <video id="localVideo" autoplay="autoplay" muted="true"/>
@@ -56,5 +56,5 @@
 </html>
 
 <script type="text/javascript">
-    document.getElementById('sendButton').setAttribute('disabled', 'true');
+  document.getElementById('sendButton').setAttribute('disabled', 'true');
 </script>

@@ -17,9 +17,13 @@
     margin: 0px auto;
     -webkit-perspective: 1000;
   }
-  #chatBox {
+  #chat {
     width: 200px;
     height: 400px;
+  }
+  #chatBox {
+    width: 200px;
+    height: 350px;
     background-color:green;
   }
   #card {
