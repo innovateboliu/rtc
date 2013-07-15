@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  	<title>Loby</title>
+  	<link rel="stylesheet" href="css/loby.css" />
+  </head>
+  <body>
+  	<script type="text/javascript">
+  	  function createNewRoom() {
+  	  	var parent=document.getElementById('workingArea');
+
+  	  	var form = document.createElement("div");
+  	  	form.innerHTML="Input a new room name";
+  	  	form.id = 'newRoomForm'
+
+  	  	var input = document.createElement('input');
+  	  	input.type = 'text';
+  	  	input.id = 'newRoomName';
+  	  	form.appendChild(input);
+  	  	var confirm = document.createElement('button');
+        confirm.innerHTML = "confirm"
+  	  	confirm.onclick = function() {
+          var request = new XMLHttpRequest();
+          var roomName = document.getElementById('newRoomName').value
+
+          request.open("GET", "createNewRoom?roomName=" + roomName, true);
+          request.send();
+
+          request.onreadystatechange = function() {
+            if (request.readyState == 4 || request.readyState == 200) {
+              var roomList = document.getElementById('roomList');
+              var roomButton = document.createElement('button');
+              roomButton.style.width='120px';
+              roomButton.style.height = '120px';
+              
+              result = request.responseText;
+              if (result == 'failed') {
+                alert("this name is not available, please use another one");
+              } else {
+                var roomKey = result.split('&')[1]
+                roomButton.innerHTML = 'Room name: ' + roomKey;
+                roomButton.onclick = function() {
+                  var request = new XMLHttpRequest();
+
+                  request.onreadystatechange = function() {
+                    var win = window.open();
+                    win.document.open();
+                    win.document.write(request.responseText);
+                    win.document.close();   
+                  }
+                  request.open('GET', 'chatPage?r=' + roomKey)
+                  request.send()
+                }
+                roomList.appendChild(roomButton);
+              }
+            }
+          }
+        }
+  	  	form.appendChild(confirm);
+
+        parent.appendChild(form);
+  	  }
+
+  	  
+  	</script>
+  	<div id="workingArea">
+  	  <div id="roomList"></div>
+  	  <button id="createNewRoom" onclick="createNewRoom()">Create a new room</button>
+    </div>
+    <script type="text/javascript">
+      var rooms = {{room_list}}
+      if (rooms) {
+        var roomList = document.getElementById('roomList');
+        for (var i = 0; i < rooms.length; i++) {
+          var roomButton = document.createElement('button');
+          roomButton.style.width='120px';
+          roomButton.style.height = '120px';
+          roomKey = rooms[i];
+          roomButton.id = roomKey
+          roomButton.innerHTML = 'Room name: ' + roomKey;
+          roomButton.onclick = function() {
+            var request = new XMLHttpRequest();
+            request.onreadystatechange = function() {
+              if (request.readyState == 4 || request.readyState == 200) {
+                win = window.open();
+                win.document.write(request.responseText);
+                win.document.close();
+              }
+            }
+            request.open('GET', 'chatPage?r=' + this.id);
+            request.send();
+          }
+          roomList.appendChild(roomButton);
+        }
+      }
+    </script>
+  </body>
+</html>

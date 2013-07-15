@@ -281,7 +281,35 @@ class MessagePage(webapp2.RequestHandler):
       else:
         logging.warning('Unknown room ' + room_key)
 
-class MainPage(webapp2.RequestHandler):
+class LobyPage(webapp2.RequestHandler):
+  def get(self):
+    result = Room.all(keys_only=True)
+    roomList = []
+    for room in result:
+      roomList.append(room.name().encode("ascii"))
+    logging.info(roomList)
+    template = jinja_environment.get_template('loby.html')
+    template_values = {
+      'room_list': roomList                
+    }
+    self.response.out.write(template.render(template_values))
+
+class createNewRoomPage(webapp2.RequestHandler):
+  def get(self):
+    user = generate_random(8)
+    room_key = self.request.get('roomName')
+    room = Room.get_by_key_name(room_key)
+    if room is not None:
+      logging.info("duplicated!!!!!!!!!!!!!!!!!!!!")
+      self.response.out.write('failed')
+    else: 
+      room = Room(key_name = room_key)
+      room.add_user(user)
+      self.response.out.write('successful&'+room_key)
+    
+  
+
+class ChatPage(webapp2.RequestHandler):
   """The main UI page, renders the 'index.html' template."""
   def get(self):
     """Renders the main page. When this page is shown, we create a new
@@ -289,6 +317,7 @@ class MainPage(webapp2.RequestHandler):
     # get the base url without arguments.
     base_url = self.request.path_url
     room_key = sanitize(self.request.get('r'))
+    logging.info("request " + self.request.url)
     debug = self.request.get('debug')
     unittest = self.request.get('unittest')
     stun_server = self.request.get('ss')
@@ -384,14 +413,17 @@ class MainPage(webapp2.RequestHandler):
       target_page = 'index.html'
 
     template = jinja_environment.get_template(target_page)
+    logging.info('!!!!!!!!!' + template.render(template_values))
     self.response.out.write(template.render(template_values))
     logging.info('User ' + user + ' added to room ' + room_key)
     logging.info('Room ' + room_key + ' has state ' + str(room))
 
 
 app = webapp2.WSGIApplication([
-    ('/', MainPage),
+    ('/chatPage', ChatPage),
     ('/message', MessagePage),
     ('/_ah/channel/connected/', ConnectPage),
-    ('/_ah/channel/disconnected/', DisconnectPage)
+    ('/_ah/channel/disconnected/', DisconnectPage),
+    ('/loby', LobyPage),
+    ('/createNewRoom', createNewRoomPage)
   ], debug=True)
