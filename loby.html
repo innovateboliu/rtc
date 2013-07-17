@@ -30,7 +30,7 @@
               if (request.responseText == "Failed") {
                 alert("you already entered the room");
               } else {
-                var win = window.open();
+                var win = window.open("http://www.google.com");
                 win.document.open();
                 win.document.write(request.responseText);
                 win.document.close(); 

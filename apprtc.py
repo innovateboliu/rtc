@@ -67,6 +67,7 @@ def handle_message(room, user, message):
   if message_obj['type'] == 'bye':
     # This would remove the other_user in loopback test too.
     # So check its availability before forwarding Bye message.
+    logging.info("!!!!!!!!!!!!! in handle_message")
     room.remove_user(user)
     logging.info('User ' + user + ' quit from room ' + room_key)
     logging.info('Room ' + room_key + ' has state ' + str(room))
@@ -234,22 +235,50 @@ class Room(db.Model):
       self.put()
 
   def remove_user(self, userKey):
+    # delete_saved_messages(make_client_id(self, userKey))
+    # if self.user2 and userKey == self.user2.key().name():
+    #   self.user2 = None
+    #   self.user2_connected = False
+    # if self.user1 and userKey == self.user1.key().name():
+    #   if self.user2:
+    #     self.user1 = self.user2
+    #     self.user1_connected = self.user2_connected
+    #     self.user2 = None
+    #     self.user2_connected = False
+    #   else:
+    #     self.user1 = None
+    #     self.user1_connected = False
+    # if self.get_occupancy() > 0:
+    #   self.put()
+    # else:
+    #   self.delete()
+
     delete_saved_messages(make_client_id(self, userKey))
-    if self.user2 and userKey == self.user2.key().name():
+    users = self.user_set.fetch(None)
+    
+    if users and users[0].key().name() == userKey:
+      logging.info("!!!!!!!!!!!!!!!!! remove users1")
+      self.user1 = None
+      self.user1_connected = False
+      users[0].delete()
+      for u in self.user_set.fetch(None):
+        logging.info("!!!!!!!!!!!!!!!!! users are: " + u.key().name())
+    elif users and len(users) == 2 and users[1].key().name() == userKey: 
+      logging.info("!!!!!!!!!!!!!!!!! remove users2") 
       self.user2 = None
       self.user2_connected = False
-    if self.user1 and userKey == self.user1.key().name():
-      if self.user2:
-        self.user1 = self.user2
-        self.user1_connected = self.user2_connected
-        self.user2 = None
-        self.user2_connected = False
-      else:
-        self.user1 = None
-        self.user1_connected = False
+      users[1].delete()
+      for u in self.user_set.fetch(None):
+        logging.info("!!!!!!!!!!!!!!!!! users are: " + u.key().name())
     if self.get_occupancy() > 0:
+      logging.info("!!!!!!!!!!!!!!!!! in remove still users")
+      for u in self.user_set.fetch(None):
+        logging.info("!!!!!!!!!!!!!!!!! users are: " + u.key().name())
       self.put()
     else:
+      logging.info("!!!!!!!!!!!!!!!!! in remove no users")
+      for u in self.user_set.fetch(None):
+        logging.info("!!!!!!!!!!!!!!!!! users are: " + u.key().name())
       self.delete()
 
   def set_connected(self, userKey):
@@ -281,10 +310,8 @@ class Room(db.Model):
     users = self.user_set.fetch(None)
     
     if users and users[0].key().name() == userKey:
-      
       return self.user1_connected
     elif users and len(users) == 2 and users[1].key().name() == userKey:
-      
       return self.user2_connected
 
 class User(db.Model):
@@ -324,6 +351,7 @@ class DisconnectPage(webapp2.RequestHandler):
   def post(self):
     key = self.request.get('from')
     room_key, user = key.split('/')
+    logging.info("!!!!!!!!!!!!! in DisconnectPage")
     with LOCK:
       room = Room.get_by_key_name(room_key)
       if room and room.has_user(user):
@@ -517,6 +545,7 @@ class ChatPage(webapp2.RequestHandler):
 
     template = jinja_environment.get_template(target_page)
     self.response.out.write(template.render(template_values))
+    logging.info(template.render(template_values))
     logging.info('User ' + user + ' added to room ' + room_key)
     logging.info('Room ' + room_key + ' has state ' + str(room))
 
