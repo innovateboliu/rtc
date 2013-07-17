@@ -6,24 +6,72 @@
   </head>
   <body>
   	<script type="text/javascript">
+      function createEntreForm(roomKey) {
+        var parent = document.getElementById('workingArea');
+        var form = document.createElement("div");
+        form.innerHTML="your user name";
+        form.id = 'enterRoomForm'
+
+        var inputUserName = document.createElement('input');
+        inputUserName.type = 'text';
+        inputUserName.id = 'enterUserName';
+        form.appendChild(inputUserName);
+        var confirm = document.createElement('button');
+        confirm.innerHTML = "confirm";
+        confirm.id = "confirmButton";
+      
+        confirm.onclick = function() {
+          var request = new XMLHttpRequest();
+          
+          var userName = document.getElementById('enterUserName').value
+
+          request.onreadystatechange = function() {
+            if (request.readyState == 4 || request.readyState == 200) {
+              if (request.responseText == "Failed") {
+                alert("you already entered the room");
+              } else {
+                var win = window.open();
+                win.document.open();
+                win.document.write(request.responseText);
+                win.document.close(); 
+              }  
+            }
+          }
+
+          request.open("GET", "chatPage?r=" + roomKey +"&userName=" + userName, true);
+          request.send();
+          // var confirmButton = document.getElementById('confirmButton');
+          // form.removeChild(confirmButton);
+          parent.removeChild(form);
+        }
+        form.appendChild(confirm);
+
+        parent.appendChild(form);
+      }
+
   	  function createNewRoom() {
   	  	var parent=document.getElementById('workingArea');
 
   	  	var form = document.createElement("div");
-  	  	form.innerHTML="Input a new room name";
+  	  	form.innerHTML="Input a new room name and user name";
   	  	form.id = 'newRoomForm'
 
-  	  	var input = document.createElement('input');
-  	  	input.type = 'text';
-  	  	input.id = 'newRoomName';
-  	  	form.appendChild(input);
+  	  	var inputRoomName = document.createElement('input');
+  	  	inputRoomName.type = 'text';
+  	  	inputRoomName.id = 'newRoomName';
+  	  	form.appendChild(inputRoomName);
+        var inputUserName = document.createElement('input');
+        inputUserName.type = 'text';
+        inputUserName.id = 'newUserName';
+        form.appendChild(inputUserName);
   	  	var confirm = document.createElement('button');
-        confirm.innerHTML = "confirm"
+        confirm.innerHTML = "confirm";
   	  	confirm.onclick = function() {
           var request = new XMLHttpRequest();
           var roomName = document.getElementById('newRoomName').value
+          var userName = document.getElementById('newUserName').value
 
-          request.open("GET", "createNewRoom?roomName=" + roomName, true);
+          request.open("GET", "createNewRoom?roomName=" + roomName +"&userName=" + userName, true);
           request.send();
 
           request.onreadystatechange = function() {
@@ -39,22 +87,17 @@
               } else {
                 var roomKey = result.split('&')[1]
                 roomButton.innerHTML = 'Room name: ' + roomKey;
+                roomButton.id = roomKey
                 roomButton.onclick = function() {
-                  var request = new XMLHttpRequest();
+                  createEntreForm(this.id);
 
-                  request.onreadystatechange = function() {
-                    var win = window.open();
-                    win.document.open();
-                    win.document.write(request.responseText);
-                    win.document.close();   
-                  }
-                  request.open('GET', 'chatPage?r=' + roomKey)
-                  request.send()
                 }
                 roomList.appendChild(roomButton);
               }
             }
           }
+
+          parent.removeChild(form);
         }
   	  	form.appendChild(confirm);
 
@@ -79,16 +122,17 @@
           roomButton.id = roomKey
           roomButton.innerHTML = 'Room name: ' + roomKey;
           roomButton.onclick = function() {
-            var request = new XMLHttpRequest();
-            request.onreadystatechange = function() {
-              if (request.readyState == 4 || request.readyState == 200) {
-                win = window.open();
-                win.document.write(request.responseText);
-                win.document.close();
-              }
-            }
-            request.open('GET', 'chatPage?r=' + this.id);
-            request.send();
+            createEntreForm(this.id);
+            // var request = new XMLHttpRequest();
+            // request.onreadystatechange = function() {
+            //   if (request.readyState == 4 || request.readyState == 200) {
+            //     win = window.open();
+            //     win.document.write(request.responseText);
+            //     win.document.close();
+            //   }
+            // }
+            // request.open('GET', 'chatPage?r=' + this.id);
+            // request.send();
           }
           roomList.appendChild(roomButton);
         }

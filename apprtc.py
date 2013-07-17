@@ -158,56 +158,87 @@ class Message(db.Model):
   client_id = db.StringProperty()
   msg = db.TextProperty()
 
+
+
 class Room(db.Model):
   """All the data we store for a room"""
-  user1 = db.StringProperty()
-  user2 = db.StringProperty()
+  user1 = None
+  user2 = None
   user1_connected = db.BooleanProperty(default=False)
   user2_connected = db.BooleanProperty(default=False)
+
+  def build(self):
+    pass
+  #   user1 = self.user_set.get()[0]
+  #   user2 = self.user_set.get()[1] 
+
 
   def __str__(self):
     result = '['
     if self.user1:
-      result += "%s-%r" % (self.user1, self.user1_connected)
+      result += 'user1' + "%s-%r" % (self.user1.key().name(), self.user1_connected)
     if self.user2:
-      result += ", %s-%r" % (self.user2, self.user2_connected)
+      result += 'user2' + ", %s-%r" % (self.user2.key().name(), self.user2_connected)
     result += ']'
     return result
 
-  def get_occupancy(self):
-    occupancy = 0
-    if self.user1:
-      occupancy += 1
-    if self.user2:
-      occupancy += 1
-    return occupancy
+  def get_occupancy(self):   
+    return len(self.user_set.fetch(None))
+    # occupancy = 0
+    # if self.user1:
+    #   occupancy += 1
+    # if self.user2:
+    #   occupancy += 1
+    # logging.warning("!!!!!!!! occupancy number is " + str(occupancy))
+    # return occupancy
 
-  def get_other_user(self, user):
-    if user == self.user1:
-      return self.user2
-    elif user == self.user2:
-      return self.user1
-    else:
-      return None
+  def get_other_user(self, userKey):
+    # if self.user1 and userKey == self.user1.key().name():
+    #   return self.user2.key().name()
+    # elif self.user2 and userKey == self.user2.key().name():
+    #   return self.user1.key().name()
+    # else:
+    #   return None
 
-  def has_user(self, user):
-    return (user and (user == self.user1 or user == self.user2))
+    for u in self.user_set.fetch(None):
+      name = u.key().name()
+      if name != userKey:
+        return name
+    return None
 
-  def add_user(self, user):
-    if not self.user1:
-      self.user1 = user
-    elif not self.user2:
-      self.user2 = user
-    else:
-      raise RuntimeError('room is full')
-    self.put()
+  def has_user(self, userKey):
+    for u in self.user_set.fetch(None):
+          if u.key().name() == userKey:
+            return True
+    return False
+    # return (userKey and ((self.user1 and userKey == self.user1.key().name()) or (self.user2 and userKey == self.user2.key().name())))
 
-  def remove_user(self, user):
-    delete_saved_messages(make_client_id(self, user))
-    if user == self.user2:
+  def add_user(self, userKey):
+    with LOCK:
+      if not self.user1:
+        user = User(key_name = userKey, room = self)
+        user.put()
+        logging.warning("!!!!!!!!!!!" + User.get_by_key_name(userKey).key().name())
+        logging.warning("!!!!!!!!!!!" + self.user_set.fetch(None).__class__.__name__)
+        self.user1 = self.user_set.fetch(None)[0]
+        logging.warning("!!!!!!!!!!! in 223 " + str(self.user1))
+        logging.warning("!!!!!!!!!!! add user1 " + self.user1.key().name())
+      elif not self.user2:
+        user = User(key_name = userKey, room = self)
+        user.put()
+        logging.warning("!!!!!!!!!!!" + User.get_by_key_name(userKey).key().name())
+        self.user2 = self.user_set.fetch(None)[1]
+        logging.warning("!!!!!!!!!!! add user1" + self.user2.key().name())
+      else:
+        raise RuntimeError('room is full')
+      self.put()
+
+  def remove_user(self, userKey):
+    delete_saved_messages(make_client_id(self, userKey))
+    if self.user2 and userKey == self.user2.key().name():
       self.user2 = None
       self.user2_connected = False
-    if user == self.user1:
+    if self.user1 and userKey == self.user1.key().name():
       if self.user2:
         self.user1 = self.user2
         self.user1_connected = self.user2_connected
@@ -221,32 +252,70 @@ class Room(db.Model):
     else:
       self.delete()
 
-  def set_connected(self, user):
-    if user == self.user1:
+  def set_connected(self, userKey):
+    # if self.user1 and userKey == self.user1.key().name():
+    #   self.user1_connected = True
+    # if self.user2 and userKey == self.user2.key().name():
+    #   self.user2_connected = True
+    # self.put()
+
+    logging.warning("!!!!!!! in set_connected, userKey is:" + userKey)
+    users = self.user_set.fetch(None)
+    logging.warning("!!!!!!! in set_connected, users size is:" + str(len(users)))
+    if users and users[0].key().name() == userKey:
+      logging.warning("!!!!!!! user1 is:" + userKey)
+      logging.warning("!!!!!!! result is:" + str(self.user1_connected))
       self.user1_connected = True
-    if user == self.user2:
+    elif users and len(users) == 2 and users[1].key().name() == userKey:
+      logging.warning("!!!!!!! user2 is:" + userKey)
       self.user2_connected = True
     self.put()
 
-  def is_connected(self, user):
-    if user == self.user1:
+  def is_connected(self, userKey):
+    # if self.user1 and userKey == self.user1.key().name():
+    #   return self.user1_connected
+    # if self.user2 and userKey == self.user2.key().name():
+    #   return self.user2_connected
+    
+
+    users = self.user_set.fetch(None)
+    
+    if users and users[0].key().name() == userKey:
+      
       return self.user1_connected
-    if user == self.user2:
+    elif users and len(users) == 2 and users[1].key().name() == userKey:
+      
       return self.user2_connected
+
+class User(db.Model):
+  name = db.StringProperty()
+  room = db.ReferenceProperty(Room)
+  def __str__(self):
+    return self.key().name()
 
 class ConnectPage(webapp2.RequestHandler):
   def post(self):
+    logging.warning("!!!!!!!!!in connectpage handler, full url is: " + self.request.url)
     key = self.request.get('from')
     room_key, user = key.split('/')
     with LOCK:
       room = Room.get_by_key_name(room_key)
+
+      logging.info('Room ' + room_key + ' has state ' + str(room))
+      for u in room.user_set.fetch(None):
+        logging.info('room has user ' + str(u) + '/user1: ' + str(room.user1))
+        logging.info('room has user ' + str(u) + '/user2: ' + str(room.user2))
+
       # Check if room has user in case that disconnect message comes before
       # connect message with unknown reason, observed with local AppEngine SDK.
-      if room and room.has_user(user):
+      if room and room.has_user(user) and room.get_other_user(user):
+        logging.info('room has user ' + str(u) + '/user1: ' + str(room.user1))
         room.set_connected(user)
         send_saved_messages(make_client_id(room, user))
         logging.info('User ' + user + ' connected to room ' + room_key)
         logging.info('Room ' + room_key + ' has state ' + str(room))
+      elif room and room.has_user(user) and not room.get_other_user(user):
+        room.set_connected(user)
       else:
         logging.warning('Unexpected Connect Message to room ' + room_key)
 
@@ -296,15 +365,16 @@ class LobyPage(webapp2.RequestHandler):
 
 class createNewRoomPage(webapp2.RequestHandler):
   def get(self):
-    user = generate_random(8)
+    user = self.request.get('userName')
     room_key = self.request.get('roomName')
     room = Room.get_by_key_name(room_key)
     if room is not None:
-      logging.info("duplicated!!!!!!!!!!!!!!!!!!!!")
       self.response.out.write('failed')
     else: 
       room = Room(key_name = room_key)
-      room.add_user(user)
+      room.build()
+      room.put()
+      # room.add_user(user)
       self.response.out.write('successful&'+room_key)
     
   
@@ -317,6 +387,7 @@ class ChatPage(webapp2.RequestHandler):
     # get the base url without arguments.
     base_url = self.request.path_url
     room_key = sanitize(self.request.get('r'))
+    user = self.request.get('userName')
     logging.info("request " + self.request.url)
     debug = self.request.get('debug')
     unittest = self.request.get('unittest')
@@ -361,30 +432,62 @@ class ChatPage(webapp2.RequestHandler):
       logging.info('Redirecting visitor to base URL to ' + redirect)
       return
 
-    user = None
+    # user = None
     initiator = 0
     with LOCK:
+      logging.warning("!!!!!!!!!!!! room_key is: " + room_key)
       room = Room.get_by_key_name(room_key)
       if not room and debug != "full":
+        logging.warning("!!!!!!!!!!!! create a old new room ")
         # New room.
-        user = generate_random(8)
+        # user = generate_random(8)
         room = Room(key_name = room_key)
+        room.build()
         room.add_user(user)
         if debug != 'loopback':
           initiator = 0
         else:
           room.add_user(user)
           initiator = 1
-      elif room and room.get_occupancy() == 1 and debug != 'full':
-        # 1 occupant.
-        user = generate_random(8)
+      elif room and room.get_occupancy() == 0 and debug != 'full':
+        logging.warning("!!!!!!room is empty")
+        
+        # 0 occupant.
         room.add_user(user)
-        initiator = 1
-      else:
+        room.user_set.fetch(None) # hack for flush()
+        logging.warning("!!!!!! important ")
+        for u in room.user_set.fetch(None):
+          logging.warning("!!!!!!important room users are: " + str(u))
+        for u in room.user_set.fetch(None):
+          logging.warning("!!!!!!important room users are: " + str(u))
+        initiator = 0
+
+      elif room and room.get_occupancy()  == 1 and debug != 'full':
+        logging.warning("!!!!!!room is not full")
+        for u in room.user_set.fetch(None):
+          logging.warning("!!!!!!room users are: " + str(u))
+        
+        # 1 occupant.
+        # user = generate_random(8)
+        userObj = User.get_by_key_name(user)
+
+        if userObj and userObj.room and userObj.room.key().name() == room_key:
+          self.response.out.write("Failed")
+          return
+        else :
+          room.add_user(user)
+          initiator = 1
+      elif room and room.get_occupancy() >= 2 and debug != 'full':
         # 2 occupants (full).
+        logging.warning("!!!!!!room is really full, user number is " + str(room.get_occupancy()))
+        for u in room.user_set.fetch(None):
+          logging.warning("!!!!!!room users are: " + str(u))
         template = jinja_environment.get_template('full.html')
         self.response.out.write(template.render({ 'room_key': room_key }))
         logging.info('Room ' + room_key + ' is full')
+        return
+      else:
+        logging.warning("ERROR!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
         return
 
     room_link = base_url + '?r=' + room_key
@@ -413,7 +516,6 @@ class ChatPage(webapp2.RequestHandler):
       target_page = 'index.html'
 
     template = jinja_environment.get_template(target_page)
-    logging.info('!!!!!!!!!' + template.render(template_values))
     self.response.out.write(template.render(template_values))
     logging.info('User ' + user + ' added to room ' + room_key)
     logging.info('Room ' + room_key + ' has state ' + str(room))
