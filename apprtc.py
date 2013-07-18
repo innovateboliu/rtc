@@ -236,6 +236,7 @@ class Room(db.Model):
 
 class ConnectPage(webapp2.RequestHandler):
   def post(self):
+    logging.info("!!!!!!! in ConnectPage handler")
     key = self.request.get('from')
     room_key, user = key.split('/')
     with LOCK:
@@ -243,12 +244,14 @@ class ConnectPage(webapp2.RequestHandler):
       # Check if room has user in case that disconnect message comes before
       # connect message with unknown reason, observed with local AppEngine SDK.
       if room and room.has_user(user):
+        logging.info("!!!!!!! in room has user")
         room.set_connected(user)
         send_saved_messages(make_client_id(room, user))
         logging.info('User ' + user + ' connected to room ' + room_key)
         logging.info('Room ' + room_key + ' has state ' + str(room))
       else:
         logging.warning('Unexpected Connect Message to room ' + room_key)
+      logging.info("!!!!!!! end ConnectPage handler")
 
 
 class DisconnectPage(webapp2.RequestHandler):
@@ -271,6 +274,7 @@ class DisconnectPage(webapp2.RequestHandler):
 
 class MessagePage(webapp2.RequestHandler):
   def post(self):
+    logging.info("!!!!!!! in MessagePage handler")
     message = self.request.body
     room_key = self.request.get('r')
     user = self.request.get('u')
