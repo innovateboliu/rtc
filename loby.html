@@ -3,140 +3,56 @@
   <head>
   	<title>Loby</title>
   	<link rel="stylesheet" href="css/loby.css" />
-  </head>
-  <body>
-  	<script type="text/javascript">
-      function createEntreForm(roomKey) {
-        var parent = document.getElementById('workingArea');
-        var form = document.createElement("div");
-        form.innerHTML="your user name";
-        form.id = 'enterRoomForm'
-
-        var inputUserName = document.createElement('input');
-        inputUserName.type = 'text';
-        inputUserName.id = 'enterUserName';
-        form.appendChild(inputUserName);
-        var confirm = document.createElement('button');
-        confirm.innerHTML = "confirm";
-        confirm.id = "confirmButton";
-      
-        confirm.onclick = function() {
-          var request = new XMLHttpRequest();
-          
-          var userName = document.getElementById('enterUserName').value
-
-          request.onreadystatechange = function() {
-            if (request.readyState == 4 || request.readyState == 200) {
-              if (request.responseText == "Failed") {
-                alert("you already entered the room");
-              } else {
-                var win = window.open("http://www.google.com");
-                win.document.open();
-                win.document.write(request.responseText);
-                win.document.close(); 
-              }  
-            }
-          }
-
-          request.open("GET", "chatPage?r=" + roomKey +"&userName=" + userName, true);
-          request.send();
-          // var confirmButton = document.getElementById('confirmButton');
-          // form.removeChild(confirmButton);
-          parent.removeChild(form);
-        }
-        form.appendChild(confirm);
-
-        parent.appendChild(form);
-      }
-
-  	  function createNewRoom() {
-  	  	var parent=document.getElementById('workingArea');
-
-  	  	var form = document.createElement("div");
-  	  	form.innerHTML="Input a new room name and user name";
-  	  	form.id = 'newRoomForm'
-
-  	  	var inputRoomName = document.createElement('input');
-  	  	inputRoomName.type = 'text';
-  	  	inputRoomName.id = 'newRoomName';
-  	  	form.appendChild(inputRoomName);
-        var inputUserName = document.createElement('input');
-        inputUserName.type = 'text';
-        inputUserName.id = 'newUserName';
-        form.appendChild(inputUserName);
-  	  	var confirm = document.createElement('button');
-        confirm.innerHTML = "confirm";
-  	  	confirm.onclick = function() {
-          var request = new XMLHttpRequest();
-          var roomName = document.getElementById('newRoomName').value
-          var userName = document.getElementById('newUserName').value
-
-          request.open("GET", "createNewRoom?roomName=" + roomName +"&userName=" + userName, true);
-          request.send();
-
-          request.onreadystatechange = function() {
-            if (request.readyState == 4 || request.readyState == 200) {
-              var roomList = document.getElementById('roomList');
-              var roomButton = document.createElement('button');
-              roomButton.style.width='120px';
-              roomButton.style.height = '120px';
-              
-              result = request.responseText;
-              if (result == 'failed') {
-                alert("this name is not available, please use another one");
-              } else {
-                var roomKey = result.split('&')[1]
-                roomButton.innerHTML = 'Room name: ' + roomKey;
-                roomButton.id = roomKey
-                roomButton.onclick = function() {
-                  createEntreForm(this.id);
-
-                }
-                roomList.appendChild(roomButton);
-              }
-            }
-          }
-
-          parent.removeChild(form);
-        }
-  	  	form.appendChild(confirm);
-
-        parent.appendChild(form);
-  	  }
-
-  	  
-  	</script>
-  	<div id="workingArea">
-  	  <div id="roomList"></div>
-  	  <button id="createNewRoom" onclick="createNewRoom()">Create a new room</button>
-    </div>
     <script type="text/javascript">
       var rooms = {{room_list}}
-      if (rooms) {
-        var roomList = document.getElementById('roomList');
-        for (var i = 0; i < rooms.length; i++) {
-          var roomButton = document.createElement('button');
-          roomButton.style.width='120px';
-          roomButton.style.height = '120px';
-          roomKey = rooms[i];
-          roomButton.id = roomKey
-          roomButton.innerHTML = 'Room name: ' + roomKey;
-          roomButton.onclick = function() {
-            createEntreForm(this.id);
-            // var request = new XMLHttpRequest();
-            // request.onreadystatechange = function() {
-            //   if (request.readyState == 4 || request.readyState == 200) {
-            //     win = window.open();
-            //     win.document.write(request.responseText);
-            //     win.document.close();
-            //   }
-            // }
-            // request.open('GET', 'chatPage?r=' + this.id);
-            // request.send();
-          }
-          roomList.appendChild(roomButton);
-        }
-      }
     </script>
+    <script src="/js/lobby.js"></script>
+  </head>
+  <body>
+    <div id="area">
+      <div id="controlPanel">
+        <div id="currentTopic">Video Chat</div>
+          <ul>
+            <li><a href="#">Weather</a></li>
+            <li><a href="#">Mails</a></li>
+          </ul>
+        </div> 
+        <div id="workingArea">
+          <div id="menu">
+            <ul>
+              <li id="4"><a href="#">Room List</a></li>
+              <li id="1"><a href="#">Video</a></li>
+              <li id="2"><a href="#">Chat</a></li>
+              <li id="3"><a href="#">Send Files</a></li>
+            </ul>
+          </div>
+          <div id="newRoom">
+            <div id="tag">Room List</div>
+            <button id="createNewRoom" onclick="createNewRoom()">Create a new room</button>
+            <div class="blockbkg" id="newRoomBkg" style="visibility:hidden;" onclick="returnToRoomList()">
+              <div class="content" id="newRoomForm" style="visibility:hidden;">
+                <div id="newRoomInputArea">
+                  Input room id and user name
+                  <input type="text" id="newRoomName" />
+                  <input type="text" id="newUserName" />
+                  <button id="confirmNew" onclick="confirmNewRoom()">confirm</button>
+                  <button id="cancelNew" onclick="cancelNewRoom()">cancel</button>
+                </div>
+              </div>
+            </div>
+        </div>
+        <div id="roomList">
+          <div class="blockbkg" id="bkg" style="visibility:hidden;" onclick="returnToRoomList()">
+            <div class="content" id="enterRoomForm" style="visibility:hidden;">
+              <div id="inputArea">
+                Input user name
+                <input type="text" id="enterUserName" />
+                <button id="confirmButton" onclick="enterRoom()">confirm</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </body>
 </html>
